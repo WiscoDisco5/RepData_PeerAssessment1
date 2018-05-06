@@ -1,25 +1,106 @@
 ---
 title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
+author: "John Goodwin"
+output:
+  html_document: 
     keep_md: true
 ---
 
 
 ## Loading and preprocessing the data
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+```{r}
+unzip("activity.zip")
+
+activity <- read_csv('activity.csv')
+
+file.remove('activity.csv') ##clean up
+```
+
+Let's make a more detailed time variable. Since the interval variable is just the number of minutes, I am going to combine the date and interval fields into a more meaningful date time variable. While we are messing around with dates, I am going to add a week day variable.
+
+```{r}
+library(lubridate)
+
+activity <- activity %>%
+  mutate(minutes = dminutes(interval),
+         datetime = ymd_hms(date + minutes),
+         weekday = weekdays(date))
+```
+And here is a look at a sample of the final dataset:
+
+```{r}
+activity %>% sample_n(20)
+```
 
 
 ## What is mean total number of steps taken per day?
 
+```{r}
+daily_tot_steps <- activity %>%
+  filter(!is.na(steps)) %>%
+  group_by(date) %>%
+  summarise(total_steps = sum(steps))
+```
 
+```{r}
+ggplot(daily_tot_steps, aes(total_steps)) + 
+  geom_histogram(bins = 15, fill = 'white', color = 'black') +
+  theme_bw() +
+  ggtitle('Histogram of Total Steps Per Day')
+
+```
+
+```{r}
+mean_steps <- mean(daily_tot_steps$total_steps)
+med_steps <- median(daily_tot_steps$total_steps)
+```
+
+The mean number of steps taken per day is `r toString(round(mean_steps,2))` steps.
+The median number of steps taken per day is `r toString(round(med_steps,2))` steps.
 
 ## What is the average daily activity pattern?
 
+```{r}
+int_avg_steps <- activity %>%
+  filter(!is.na(steps)) %>%
+  group_by(interval) %>%
+  summarise(avg_steps = mean(steps))
 
+max_avg <- int_avg_steps %>%
+  filter(avg_steps == max(avg_steps))
+
+ggplot(int_avg_steps, aes(interval, avg_steps)) +
+  geom_line() +
+  theme_bw() +
+  geom_vline(data = max_avg, aes(xintercept = interval, color = 'max average')) +
+  scale_color_manual(values = c('max average' = 'red')) +
+  labs(color = NULL) +
+  theme(legend.position = 'bottom') +
+  ggtitle('Average Steps by Time Interval')
+```
+
+The time interval with the maximum average number of steps is `r toString(max_avg$interval)` with `r toString(round(max_avg$avg_steps),2)` steps on average.
 
 ## Imputing missing values
 
+What's missing by date? 
 
+```{r}
+activity %>%
+  group_by(date) %>%
+  summarise(na_count = sum(is.na(steps))) %>%
+  ggplot(aes(date, na_count)) +
+  geom_point()
+```
+
+Looks like a few days are just missing entirely--all 288 time intervals are missing at a few dates. 
+
+Let's smooth out the 
 
 ## Are there differences in activity patterns between weekdays and weekends?
