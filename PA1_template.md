@@ -112,26 +112,26 @@ activity %>% sample_n(20)
 ## # A tibble: 20 x 5
 ##    steps date       interval time  weekday  
 ##    <int> <date>        <int> <chr> <chr>    
-##  1     0 2012-11-22     2205 22:05 Thursday 
-##  2    NA 2012-10-08     1525 15:25 Monday   
-##  3     0 2012-10-05     2355 23:55 Friday   
-##  4     0 2012-10-11     1440 14:40 Thursday 
-##  5     0 2012-11-24      225 02:25 Saturday 
-##  6    NA 2012-11-01     1925 19:25 Thursday 
-##  7     0 2012-11-15      820 08:20 Thursday 
-##  8     0 2012-10-15     1115 11:15 Monday   
-##  9   190 2012-11-25      915 09:15 Sunday   
-## 10    NA 2012-11-01     1020 10:20 Thursday 
-## 11     0 2012-10-16     2315 23:15 Tuesday  
-## 12     0 2012-10-25      535 05:35 Thursday 
-## 13    NA 2012-10-08     2200 22:00 Monday   
-## 14     0 2012-10-25     1150 11:50 Thursday 
-## 15    NA 2012-11-01      410 04:10 Thursday 
-## 16    36 2012-10-21     1320 13:20 Sunday   
-## 17     0 2012-10-03     2305 23:05 Wednesday
-## 18    NA 2012-11-10     1925 19:25 Saturday 
-## 19    NA 2012-10-08      700 07:00 Monday   
-## 20     0 2012-10-19     1615 16:15 Friday
+##  1     0 2012-10-18     2335 23:35 Thursday 
+##  2     0 2012-10-16      950 09:50 Tuesday  
+##  3     0 2012-10-28      135 01:35 Sunday   
+##  4     0 2012-10-19     1430 14:30 Friday   
+##  5     7 2012-11-17     1125 11:25 Saturday 
+##  6   546 2012-11-22     1615 16:15 Thursday 
+##  7     0 2012-10-26       45 00:45 Friday   
+##  8     0 2012-11-05     1010 10:10 Monday   
+##  9     0 2012-10-14     2000 20:00 Sunday   
+## 10     0 2012-11-25     2320 23:20 Sunday   
+## 11     0 2012-10-19        0 00:00 Friday   
+## 12     0 2012-11-06      220 02:20 Tuesday  
+## 13    43 2012-10-17      620 06:20 Wednesday
+## 14     0 2012-10-10     2020 20:20 Wednesday
+## 15    NA 2012-11-30      925 09:25 Friday   
+## 16     0 2012-10-19     2150 21:50 Friday   
+## 17     0 2012-10-25      710 07:10 Thursday 
+## 18     0 2012-10-27      330 03:30 Saturday 
+## 19     0 2012-11-03     1230 12:30 Saturday 
+## 20     7 2012-10-10     1200 12:00 Wednesday
 ```
 
 
@@ -301,16 +301,13 @@ activity <- activity %>%
                                 'Weekend', 'Weekday'))
 
 weekend_ts_data <- activity %>%
-  group_by(part_of_week, time) %>%
+  group_by(part_of_week, interval) %>%
   summarise(avg_steps = mean(steps, na.rm = TRUE)) %>%
   ungroup
 
-weekend_ts_data$time <- as_datetime(strptime(weekend_ts_data$time, "%H:%M", tz = 'UTC'))
-
-ggplot(weekend_ts_data, aes(time, avg_steps)) +
+ggplot(weekend_ts_data, aes(interval, avg_steps)) +
   geom_line() +
   facet_wrap(~part_of_week) +
-  scale_x_datetime(date_labels = "%H:%M") +
   theme_bw() +
   ggtitle('Average Steps by Time Interval and Part of Week')
 ```

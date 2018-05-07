@@ -187,16 +187,13 @@ activity <- activity %>%
                                 'Weekend', 'Weekday'))
 
 weekend_ts_data <- activity %>%
-  group_by(part_of_week, time) %>%
+  group_by(part_of_week, interval) %>%
   summarise(avg_steps = mean(steps, na.rm = TRUE)) %>%
   ungroup
 
-weekend_ts_data$time <- as_datetime(strptime(weekend_ts_data$time, "%H:%M", tz = 'UTC'))
-
-ggplot(weekend_ts_data, aes(time, avg_steps)) +
+ggplot(weekend_ts_data, aes(interval, avg_steps)) +
   geom_line() +
   facet_wrap(~part_of_week) +
-  scale_x_datetime(date_labels = "%H:%M") +
   theme_bw() +
   ggtitle('Average Steps by Time Interval and Part of Week')
 
