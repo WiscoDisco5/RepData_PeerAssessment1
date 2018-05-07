@@ -13,59 +13,8 @@ output:
 ```r
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
-```
-
-```
-## -- Attaching packages ------------------------------------------------------------- tidyverse 1.2.1 --
-```
-
-```
-## v ggplot2 2.2.1     v purrr   0.2.4
-## v tibble  1.4.2     v dplyr   0.7.4
-## v tidyr   0.7.2     v stringr 1.2.0
-## v readr   1.1.1     v forcats 0.2.0
-```
-
-```
-## -- Conflicts ---------------------------------------------------------------- tidyverse_conflicts() --
-## x dplyr::filter() masks stats::filter()
-## x dplyr::lag()    masks stats::lag()
-```
-
-```r
 library(lubridate)
-```
-
-```
-## 
-## Attaching package: 'lubridate'
-```
-
-```
-## The following object is masked from 'package:base':
-## 
-##     date
-```
-
-```r
 library(scales)
-```
-
-```
-## 
-## Attaching package: 'scales'
-```
-
-```
-## The following object is masked from 'package:purrr':
-## 
-##     discard
-```
-
-```
-## The following object is masked from 'package:readr':
-## 
-##     col_factor
 ```
 
 
@@ -112,26 +61,26 @@ activity %>% sample_n(20)
 ## # A tibble: 20 x 5
 ##    steps date       interval time  weekday  
 ##    <int> <date>        <int> <chr> <chr>    
-##  1     0 2012-10-18     2335 23:35 Thursday 
-##  2     0 2012-10-16      950 09:50 Tuesday  
-##  3     0 2012-10-28      135 01:35 Sunday   
-##  4     0 2012-10-19     1430 14:30 Friday   
-##  5     7 2012-11-17     1125 11:25 Saturday 
-##  6   546 2012-11-22     1615 16:15 Thursday 
-##  7     0 2012-10-26       45 00:45 Friday   
-##  8     0 2012-11-05     1010 10:10 Monday   
-##  9     0 2012-10-14     2000 20:00 Sunday   
-## 10     0 2012-11-25     2320 23:20 Sunday   
-## 11     0 2012-10-19        0 00:00 Friday   
-## 12     0 2012-11-06      220 02:20 Tuesday  
-## 13    43 2012-10-17      620 06:20 Wednesday
-## 14     0 2012-10-10     2020 20:20 Wednesday
-## 15    NA 2012-11-30      925 09:25 Friday   
-## 16     0 2012-10-19     2150 21:50 Friday   
-## 17     0 2012-10-25      710 07:10 Thursday 
-## 18     0 2012-10-27      330 03:30 Saturday 
-## 19     0 2012-11-03     1230 12:30 Saturday 
-## 20     7 2012-10-10     1200 12:00 Wednesday
+##  1     0 2012-10-07     2155 21:55 Sunday   
+##  2    NA 2012-11-10     1745 17:45 Saturday 
+##  3   529 2012-10-20     1955 19:55 Saturday 
+##  4     0 2012-10-21     1645 16:45 Sunday   
+##  5    NA 2012-11-14      325 03:25 Wednesday
+##  6    36 2012-11-22     2015 20:15 Thursday 
+##  7     0 2012-11-20      240 02:40 Tuesday  
+##  8    NA 2012-11-04     2200 22:00 Sunday   
+##  9     0 2012-10-25      345 03:45 Thursday 
+## 10    NA 2012-10-01      425 04:25 Monday   
+## 11     0 2012-11-12      940 09:40 Monday   
+## 12     0 2012-10-10      950 09:50 Wednesday
+## 13     0 2012-10-18      400 04:00 Thursday 
+## 14     0 2012-11-24     1950 19:50 Saturday 
+## 15     0 2012-10-12      125 01:25 Friday   
+## 16    42 2012-10-18      130 01:30 Thursday 
+## 17     0 2012-10-03      320 03:20 Wednesday
+## 18     7 2012-10-21     1605 16:05 Sunday   
+## 19    85 2012-11-24      825 08:25 Saturday 
+## 20    NA 2012-10-08      340 03:40 Monday
 ```
 
 
@@ -153,7 +102,7 @@ ggplot(daily_tot_steps, aes(total_steps)) +
   ggtitle('Histogram of Total Steps Per Day')
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
+![plot of chunk unnamed-chunk-20](figure/unnamed-chunk-20-1.png)
 
 
 ```r
@@ -187,7 +136,7 @@ ggplot(int_avg_steps, aes(time, avg_steps)) +
   ggtitle('Average Steps by Time Interval')
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+![plot of chunk unnamed-chunk-22](figure/unnamed-chunk-22-1.png)
 
 The time interval with the maximum average number of steps is at 08:35 with 206.17 steps on average.
 
@@ -206,7 +155,7 @@ activity %>%
   geom_point()
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
+![plot of chunk unnamed-chunk-23](figure/unnamed-chunk-23-1.png)
 
 Looks like a few dates are just missing entirely--all 288 time intervals are missing at a few dates. 
 
@@ -244,7 +193,7 @@ loess_pred %>%
   ggtitle("LOESS Curve Fit by Bandwidth")
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+![plot of chunk unnamed-chunk-24](figure/unnamed-chunk-24-1.png)
 
 It looks like a span of of 0.3 picks up on some of the large spikes without overfitting. Now let's use that curve to fill in the missing values. It would probably be better practice to use cross validation to choose a span, but this is just a quick fit!
 
@@ -281,7 +230,7 @@ ggplot(daily_tot_steps, aes(total_steps)) +
   ggtitle('Histogram of Total Steps Per Day After Replacing Missing')
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
+![plot of chunk unnamed-chunk-26](figure/unnamed-chunk-26-1.png)
 
 ```r
 mean_steps <- mean(daily_tot_steps$total_steps)
@@ -312,6 +261,6 @@ ggplot(weekend_ts_data, aes(interval, avg_steps)) +
   ggtitle('Average Steps by Time Interval and Part of Week')
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
+![plot of chunk unnamed-chunk-27](figure/unnamed-chunk-27-1.png)
 
 It looks like there may be a slight difference between the step patterns during the weekdays compared to weekends. The weekend results are volatile, but it would appear that the steps are higher on average and evenly distributed throughout the middle of the day. During the week, the steps appear to be lower on average and are more concentrated early in the day.
