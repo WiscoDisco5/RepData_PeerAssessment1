@@ -10,6 +10,63 @@ output:
 ## Loading and preprocessing the data
 
 
+```r
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+```
+## -- Attaching packages ------------------------------------------------------------- tidyverse 1.2.1 --
+```
+
+```
+## v ggplot2 2.2.1     v purrr   0.2.4
+## v tibble  1.4.2     v dplyr   0.7.4
+## v tidyr   0.7.2     v stringr 1.2.0
+## v readr   1.1.1     v forcats 0.2.0
+```
+
+```
+## -- Conflicts ---------------------------------------------------------------- tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()
+```
+
+```r
+library(lubridate)
+```
+
+```
+## 
+## Attaching package: 'lubridate'
+```
+
+```
+## The following object is masked from 'package:base':
+## 
+##     date
+```
+
+```r
+library(scales)
+```
+
+```
+## 
+## Attaching package: 'scales'
+```
+
+```
+## The following object is masked from 'package:purrr':
+## 
+##     discard
+```
+
+```
+## The following object is masked from 'package:readr':
+## 
+##     col_factor
+```
 
 
 ```r
@@ -35,7 +92,7 @@ file.remove('activity.csv') ##clean up
 ## [1] TRUE
 ```
 
-Let's make more detailed time variables. Since the interval variable is just the number of minutes, I am going to combine the date and interval fields into a complete datetime variable.  While we are messing around with dates, I am going to extract a prettier time of day field and add a weekday variable.
+Let's make more detailed time variables. I am going to turn the interval column into a more attractive date field and extract the day of the week from the date column.
 
 
 ```r
@@ -55,26 +112,26 @@ activity %>% sample_n(20)
 ## # A tibble: 20 x 5
 ##    steps date       interval time  weekday  
 ##    <int> <date>        <int> <chr> <chr>    
-##  1     0 2012-10-24      415 04:15 Wednesday
-##  2    15 2012-11-22     1450 14:50 Thursday 
-##  3     0 2012-10-15     1625 16:25 Monday   
-##  4    NA 2012-11-10      635 06:35 Saturday 
-##  5     0 2012-10-16       35 00:35 Tuesday  
-##  6    NA 2012-10-08      325 03:25 Monday   
-##  7    NA 2012-11-04     1515 15:15 Sunday   
-##  8     0 2012-11-08     1055 10:55 Thursday 
-##  9     0 2012-11-02      230 02:30 Friday   
-## 10     0 2012-10-27     2335 23:35 Saturday 
-## 11     0 2012-10-02     1245 12:45 Tuesday  
-## 12     0 2012-10-03      320 03:20 Wednesday
-## 13    NA 2012-11-04      715 07:15 Sunday   
-## 14     0 2012-11-22     2220 22:20 Thursday 
-## 15   203 2012-10-28      805 08:05 Sunday   
-## 16    NA 2012-11-30     1105 11:05 Friday   
-## 17     0 2012-10-11     1720 17:20 Thursday 
-## 18   413 2012-10-03      600 06:00 Wednesday
-## 19    NA 2012-11-09     2230 22:30 Friday   
-## 20     0 2012-11-24      720 07:20 Saturday
+##  1   168 2012-10-05     1240 12:40 Friday   
+##  2     0 2012-11-03      955 09:55 Saturday 
+##  3     0 2012-10-22     2305 23:05 Monday   
+##  4     0 2012-11-25     2150 21:50 Sunday   
+##  5   404 2012-11-06      700 07:00 Tuesday  
+##  6     0 2012-10-14     1810 18:10 Sunday   
+##  7     0 2012-11-25     1735 17:35 Sunday   
+##  8     0 2012-10-04       55 00:55 Thursday 
+##  9     0 2012-11-19      515 05:15 Monday   
+## 10     0 2012-11-13      340 03:40 Tuesday  
+## 11     0 2012-11-21     1540 15:40 Wednesday
+## 12     0 2012-10-26      930 09:30 Friday   
+## 13     0 2012-10-22      345 03:45 Monday   
+## 14     0 2012-11-18       45 00:45 Sunday   
+## 15    NA 2012-11-04      840 08:40 Sunday   
+## 16     0 2012-10-19      155 01:55 Friday   
+## 17    NA 2012-11-04     1755 17:55 Sunday   
+## 18     0 2012-10-14     1950 19:50 Sunday   
+## 19     0 2012-10-30     2150 21:50 Tuesday  
+## 20     0 2012-10-19       20 00:20 Friday
 ```
 
 
@@ -245,10 +302,10 @@ activity <- activity %>%
 
 weekend_ts_data <- activity %>%
   group_by(part_of_week, time) %>%
-  summarise(avg_steps = mean(steps)) %>%
+  summarise(avg_steps = mean(steps, na.rm = TRUE)) %>%
   ungroup
 
-weekend_ts_data$time <- strptime(weekend_ts_data$time, "%H:%M", tz = 'UTC')
+weekend_ts_data$time <- as_datetime(strptime(weekend_ts_data$time, "%H:%M", tz = 'UTC'))
 
 ggplot(weekend_ts_data, aes(time, avg_steps)) +
   geom_line() +

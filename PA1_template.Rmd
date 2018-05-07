@@ -9,7 +9,7 @@ output:
 
 ## Loading and preprocessing the data
 
-```{r setup, include=FALSE}
+```{r setup}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(lubridate)
@@ -24,7 +24,7 @@ activity <- read_csv('activity.csv')
 file.remove('activity.csv') ##clean up
 ```
 
-Let's make more detailed time variables. Since the interval variable is just the number of minutes, I am going to combine the date and interval fields into a complete datetime variable.  While we are messing around with dates, I am going to extract a prettier time of day field and add a weekday variable.
+Let's make more detailed time variables. I am going to turn the interval column into a more attractive date field and extract the day of the week from the date column.
 
 ```{r}
 activity <- activity %>%
@@ -188,10 +188,10 @@ activity <- activity %>%
 
 weekend_ts_data <- activity %>%
   group_by(part_of_week, time) %>%
-  summarise(avg_steps = mean(steps)) %>%
+  summarise(avg_steps = mean(steps, na.rm = TRUE)) %>%
   ungroup
 
-weekend_ts_data$time <- strptime(weekend_ts_data$time, "%H:%M", tz = 'UTC')
+weekend_ts_data$time <- as_datetime(strptime(weekend_ts_data$time, "%H:%M", tz = 'UTC'))
 
 ggplot(weekend_ts_data, aes(time, avg_steps)) +
   geom_line() +
