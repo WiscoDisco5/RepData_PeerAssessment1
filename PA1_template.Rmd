@@ -12,6 +12,8 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(lubridate)
+library(scales)
 ```
 
 ```{r}
@@ -22,15 +24,14 @@ activity <- read_csv('activity.csv')
 file.remove('activity.csv') ##clean up
 ```
 
-Let's make a more detailed time variable. Since the interval variable is just the number of minutes, I am going to combine the date and interval fields into a more meaningful date time variable. While we are messing around with dates, I am going to add a week day variable.
+Let's make more detailed time variables. Since the interval variable is just the number of minutes, I am going to combine the date and interval fields into a complete datetime variable.  While we are messing around with dates, I am going to extract a prettier time of day field and add a weekday variable.
 
 ```{r}
-library(lubridate)
-
 activity <- activity %>%
-  mutate(minutes = dminutes(interval),
-         datetime = ymd_hms(date + minutes),
+  mutate(time = gsub('^([0-9]{2})([0-9]+)$', '\\1:\\2', 
+                     str_pad(interval,4,'left','0')),
          weekday = weekdays(date))
+
 ```
 And here is a look at a sample of the final dataset:
 
@@ -69,27 +70,30 @@ The median number of steps taken per day is `r toString(round(med_steps,2))` ste
 ```{r}
 int_avg_steps <- activity %>%
   filter(!is.na(steps)) %>%
-  group_by(interval) %>%
-  summarise(avg_steps = mean(steps))
+  group_by(time) %>%
+  summarise(avg_steps = mean(steps)) %>% 
+  ungroup %>%
+  mutate(time_factor = 1:nrow(.)) 
 
 max_avg <- int_avg_steps %>%
   filter(avg_steps == max(avg_steps))
 
-ggplot(int_avg_steps, aes(interval, avg_steps)) +
+int_avg_steps$time <- as_datetime(strptime(int_avg_steps$time, "%H:%M", tz = 'UTC'))
+
+ggplot(int_avg_steps, aes(time, avg_steps)) +
   geom_line() +
+  scale_x_datetime(date_labels = "%H:%M") +
   theme_bw() +
-  geom_vline(data = max_avg, aes(xintercept = interval, color = 'max average')) +
-  scale_color_manual(values = c('max average' = 'red')) +
-  labs(color = NULL) +
-  theme(legend.position = 'bottom') +
   ggtitle('Average Steps by Time Interval')
 ```
 
-The time interval with the maximum average number of steps is `r toString(max_avg$interval)` with `r toString(round(max_avg$avg_steps),2)` steps on average.
+The time interval with the maximum average number of steps is at `r toString(max_avg$time)` with `r toString(round(max_avg$avg_steps,2))` steps on average.
 
 ## Imputing missing values
 
-What's missing by date? 
+There are `r sum(is.na(activity$steps))` missing steps records.
+
+When are there missing steps by date, and how many steps records are missing at those dates?
 
 ```{r}
 activity %>%
@@ -99,8 +103,103 @@ activity %>%
   geom_point()
 ```
 
-Looks like a few days are just missing entirely--all 288 time intervals are missing at a few dates. 
+Looks like a few dates are just missing entirely--all 288 time intervals are missing at a few dates. 
 
-Let's smooth out the 
+Let's quickly fit a smoothed curve to the average steps time series and use that to replace NAs.
+
+I am going to use a LOESS curve with degree two. In order to find a good bandwidth we need to look at a few of the potential options:
+
+```{r}
+bw<-seq(.1, .9, by = .1)
+
+loess_pred <- purrr::map_df(seq_len(9), ~int_avg_steps[,c(3,2)])
+
+loess_pred$bw <- replicate(288, bw) %>% as.vector %>% sort
+
+pred <- NULL
+
+for (i in 1:9) {
+  
+  curve <- loess(avg_steps ~ time_factor, data= int_avg_steps, span = bw[i])
+  
+  pred <- c(pred,predict(curve))
+  
+}
+
+loess_pred$pred <- pred
+
+loess_pred %>%
+  mutate(bw = factor(bw)) %>%
+  ggplot(aes(x = time_factor)) +
+  geom_point(aes(y = avg_steps), alpha = .4, color = 'grey') +
+  geom_line(aes(y=pred)) +
+  facet_wrap(~bw, ncol = 3 ) +
+  theme_bw() +
+  ggtitle("LOESS Curve Fit by Bandwidth")
+```
+
+It looks like a span of of 0.3 picks up on some of the large spikes without overfitting. Now let's use that curve to fill in the missing values. It would probably be better practice to use cross validation to choose a span, but this is just a quick fit!
+
+```{r}
+avg_steps <- activity %>%
+  filter(!is.na(steps)) %>%
+  group_by(time) %>%
+  summarise(avg_steps = mean(steps)) %>% 
+  ungroup %>%
+  mutate(time_factor = 1:nrow(.))
+
+loess_steps <- loess(avg_steps ~ time_factor, data = avg_steps, span = 0.3)
+predictions <- predict(loess_steps)
+
+smooth_steps <- avg_steps %>% 
+  mutate(smoothed_avg_steps = predictions) %>%
+  select(time, smoothed_avg_steps)
+
+activity_nas_replaced <- activity %>% left_join(smooth_steps, by = "time") %>%
+  mutate(steps = coalesce(as.double(steps), smoothed_avg_steps))
+```
+
+Now that we have replaced the missing values, lets see how things have changed.
+
+```{r}
+daily_tot_steps <- activity_nas_replaced %>% group_by(date) %>%
+  summarise(total_steps = sum(steps))
+
+ggplot(daily_tot_steps, aes(total_steps)) + 
+  geom_histogram(bins = 15, fill = 'white', color = 'black') +
+  theme_bw() +
+  ggtitle('Histogram of Total Steps Per Day After Replacing Missing')
+
+mean_steps <- mean(daily_tot_steps$total_steps)
+med_steps <- median(daily_tot_steps$total_steps)
+
+```
+
+After replacing the missing values, the mean number of steps taken per day is `r toString(round(mean_steps,2))` steps and the median number of steps taken per day is `r toString(round(med_steps,2))` steps. It doesn't look like the results have changed too much!
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+Using that weekday variable we created earlier, let's create an indicator of whether the observed value occured on a weekday or weekend.
+
+```{r}
+activity <- activity %>%
+  mutate(part_of_week = if_else(weekday %in% c('Saturday', 'Sunday'), 
+                                'Weekend', 'Weekday'))
+
+weekend_ts_data <- activity %>%
+  group_by(part_of_week, time) %>%
+  summarise(avg_steps = mean(steps)) %>%
+  ungroup
+
+weekend_ts_data$time <- strptime(weekend_ts_data$time, "%H:%M", tz = 'UTC')
+
+ggplot(weekend_ts_data, aes(time, avg_steps)) +
+  geom_line() +
+  facet_wrap(~part_of_week) +
+  scale_x_datetime(date_labels = "%H:%M") +
+  theme_bw() +
+  ggtitle('Average Steps by Time Interval and Part of Week')
+
+```
+
+It looks like there may be a slight difference between the step patterns during the weekdays compared to weekends. The weekend results are volatile, but it would appear that the steps are higher on average and evenly distributed throughout the middle of the day. During the week, the steps appear to be lower on average and are more concentrated early in the day.
